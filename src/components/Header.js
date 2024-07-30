@@ -1,9 +1,13 @@
-import React from 'react'
+import React from 'react';
 import { signOut  } from "firebase/auth";
 import {auth} from "../utils/firebase";
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-
+import { onAuthStateChanged } from "firebase/auth";
+import { addUser,removeUser } from '../utils/userSlice';
+import { useDispatch } from 'react-redux';
+import { useEffect } from 'react';
+import { LOGO_URL, USER_ICON } from '../utils/constants';
 
 const Header = () => {
   
@@ -11,24 +15,49 @@ const Header = () => {
 
   const navigate = useNavigate();
 
+  const dispatch = useDispatch();
+
+
+  useEffect(()=>{
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in, see docs for a list of available properties
+        // https://firebase.google.com/docs/reference/js/auth.user
+        const {uid,email,displayName} = user;
+        dispatch(addUser({uid:uid,email:email,displayName:displayName}));
+        navigate("/browse");
+        // ...
+      } else {
+        // User is signed out
+        // ...
+        dispatch(removeUser());
+        navigate("/");
+      }
+    });
+
+    //unmounting
+    return ()=> unsubscribe();
+  },[]);
+
   const handleSignout = () => {
     signOut(auth).then(() => {
       // Sign-out successful.
-      navigate("/");
+      dispatch(removeUser());
+     // navigate("/");
     }).catch((error) => {
-      navigate("/error");
+     // navigate("/error");
       // An error happened.
     });
   }
 
   return (
-    <div className="absolute w-[1515px] px-36 py-2 bg-gradient-to-b from-black z-10 flex justify-between">
-        <img className="w-32" src="https://cdn.cookielaw.org/logos/dd6b162f-1a32-456a-9cfe-897231c7763c/4345ea78-053c-46d2-b11e-09adaef973dc/Netflix_Logo_PMS.png"/>
+    <div className="absolute w-full px-16 py-4 z-10 flex justify-between">
+        <img className="w-36" src={LOGO_URL}/>
         {
-          user && <div className="py-2 flex">
-            <img src="https://occ-0-2164-2186.1.nflxso.net/dnm/api/v6/vN7bi_My87NPKvsBoib006Llxzg/AAAABTZ2zlLdBVC05fsd2YQAR43J6vB1NAUBOOrxt7oaFATxMhtdzlNZ846H3D8TZzooe2-FT853YVYs8p001KVFYopWi4D4NXM.png?r=229"/>
-          <button onClick={handleSignout} className='text-white px-4'>Signout</button> 
-          <h1 className='px-4 flex-none py-2 text-red-600 font-semibold'>{user?.displayName}</h1>
+          user && <div className="mt-2 flex">
+            <img className="w-8 h-8 mx-2" src={USER_ICON}/>
+          <h1 onClick={handleSignout} className='text-white flex-none px-4 cursor-pointer'>Sign out</h1> 
+          <h1 className='px-4 flex-none text-white font-semibold'>{user?.displayName}</h1>
           </div>
         }  
     </div>
