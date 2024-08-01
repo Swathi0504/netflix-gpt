@@ -11,7 +11,7 @@ const MainContainer = () => {
   
   //console.log(movies[0]);
 
-  const mainmovie = movies[4];
+  const mainmovie = movies[3];
 
   const {original_title,overview,id} = mainmovie;
 
